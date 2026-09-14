@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stillwater — Guided Meditation</title>
+<meta name="theme-color" content="#131826">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#131826;
+    --panel:#1c2333;
+    --panel-2:#232c40;
+    --line:#2b3448;
+    --text:#edeff5;
+    --text-dim:#9aa3b8;
+    --mind:#6c8ebf;
+    --recovery:#6fa893;
+    --faith:#c9a15a;
+    --focus:#8fb8ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+  }
+  .serif{font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
+  /* ---------- App shell ---------- */
+  #app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);}
+
+  header.top{
+    padding:20px 20px 8px;
+  }
+  .hub-link{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13px;color:var(--text-dim);text-decoration:none;
+    padding:4px 0;
+  }
+  .hub-link:hover{color:var(--text);}
+  h1.title{
+    font-size:30px;line-height:1.1;margin:14px 0 2px;font-weight:400;letter-spacing:0.2px;
+  }
+  p.subtitle{margin:0 0 16px;color:var(--text-dim);font-size:14.5px;line-height:1.5;max-width:44ch;}
+
+  .stats-row{
+    display:flex;gap:18px;align-items:baseline;margin-bottom:18px;color:var(--text-dim);font-size:13px;
+  }
+  .stats-row b{color:var(--text);font-size:15px;font-weight:600;}
+
+  /* ---------- Filter chips ---------- */
+  .filters{
+    display:flex;gap:8px;overflow-x:auto;padding:0 20px 14px;scrollbar-width:none;
+  }
+  .filters::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:none;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text-dim);
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:13.5px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .chip[aria-pressed="true"]{
+    color:var(--bg);
+    background:var(--text);
+    border-color:var(--text);
+    font-weight:600;
+  }
+
+  /* ---------- Library list ---------- */
+  ul.library{list-style:none;margin:0;padding:0 20px 40px;flex:1;}
+  li.med-item{
+    display:flex;align-items:stretch;gap:12px;
+    border-bottom:1px solid var(--line);
+    padding:14px 0;
+  }
+  li.med-item .bar{width:3px;border-radius:2px;flex:none;}
+  li.med-item .bar.mind{background:var(--mind);}
+  li.med-item .bar.recovery{background:var(--recovery);}
+  li.med-item .bar.faith{background:var(--faith);}
+  .med-btn{
+    background:none;border:none;color:inherit;text-align:left;flex:1;
+    display:flex;flex-direction:column;gap:3px;cursor:pointer;padding:0;
+  }
+  .med-btn .row1{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .med-title{font-size:16.5px;font-weight:500;}
+  .med-meta{font-size:12.5px;color:var(--text-dim);white-space:nowrap;}
+  .med-desc{font-size:13px;color:var(--text-dim);line-height:1.4;}
+  .med-tag{font-size:11px;letter-spacing:0.3px;color:var(--text-dim);}
+  .fav-btn{
+    background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;
+    padding:4px 2px;line-height:1;align-self:center;
+  }
+  .fav-btn[aria-pressed="true"]{color:var(--faith);}
+  .empty-note{color:var(--text-dim);font-size:14px;padding:30px 0;text-align:center;}
+
+  /* ---------- Player overlay ---------- */
+  #player{
+    position:fixed;inset:0;background:var(--bg);
+    display:none;flex-direction:column;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    z-index:20;
+  }
+  #player.open{display:flex;}
+  .player-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px 6px;
+  }
+  .icon-btn{
+    background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:6px;
+  }
+  .player-tag{font-size:12px;color:var(--text-dim);}
+  .player-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 26px;text-align:center;gap:26px;}
+  h2.player-title{font-size:22px;font-weight:400;margin:0;}
+
+  .breath-ring{
+    width:150px;height:150px;border-radius:50%;
+    border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+  .breath-ring .core{
+    width:70px;height:70px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--panel-2), var(--panel));
+    border:1px solid var(--line);
+    transition:transform 4s ease-in-out;
+  }
+  .breath-ring.playing .core{transform:scale(1.55);}
+  @media (prefers-reduced-motion: reduce){
+    .breath-ring .core{transition:none;}
+    .breath-ring.playing .core{transform:scale(1.15);}
+  }
+
+  .caption{
+    font-size:18px;line-height:1.6;min-height:5.5em;
+    display:flex;align-items:center;justify-content:center;
+    max-width:38ch;
+    transition:opacity .5s ease;
+  }
+  .caption.fading{opacity:0;}
+
+  .progress-line{width:100%;max-width:280px;height:2px;background:var(--line);border-radius:2px;overflow:hidden;}
+  .progress-line .fill{height:100%;background:var(--text-dim);width:0%;transition:width .4s linear;}
+  .progress-label{font-size:12px;color:var(--text-dim);}
+
+  .mode-toggle{display:flex;gap:6px;background:var(--panel);border-radius:999px;padding:4px;}
+  .mode-toggle button{
+    border:none;background:none;color:var(--text-dim);padding:7px 14px;border-radius:999px;font-size:13px;cursor:pointer;
+  }
+  .mode-toggle button[aria-pressed="true"]{background:var(--panel-2);color:var(--text);}
+
+  .player-controls{
+    display:flex;align-items:center;justify-content:center;gap:22px;
+    padding:8px 20px 20px;
+  }
+  .ctrl-btn{
+    background:var(--panel);border:1px solid var(--line);color:var(--text);
+    width:56px;height:56px;border-radius:50%;font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ctrl-btn.play{width:66px;height:66px;background:var(--panel-2);}
+  .ctrl-btn.ghost{background:none;border:none;color:var(--text-dim);width:44px;height:44px;font-size:15px;}
+
+  .voice-row{display:flex;flex-direction:column;gap:8px;width:100%;max-width:320px;padding:0 4px;}
+  .voice-row label{font-size:12px;color:var(--text-dim);text-align:left;}
+  select, input[type=range]{width:100%;}
+  select{
+    background:var(--panel);color:var(--text);border:1px solid var(--line);
+    border-radius:8px;padding:9px 10px;font-size:14px;
+  }
+  .finished-note{color:var(--recovery);font-size:14px;}
+
+  footer.hubfoot{padding:10px 20px 26px;text-align:center;}
+  footer.hubfoot a{color:var(--text-dim);font-size:12.5px;text-decoration:underline;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="top">
+    <a class="hub-link" href="../index.html">&larr; Recovery Hub</a>
+    <h1 class="title serif">Stillwater</h1>
+    <p class="subtitle">Thirty guided meditations for calm, recovery, and faith. Listen with a voice, or sit with the words yourself.</p>
+    <div class="stats-row">
+      <span>🔥 <b id="streakNum">0</b> day streak</span>
+      <span><b id="totalNum">0</b> sessions completed</span>
+    </div>
+  </header>
+
+  <nav class="filters" id="filters" role="tablist" aria-label="Filter meditations"></nav>
+
+  <ul class="library" id="library"></ul>
+</div>
+
+<!-- ===================== PLAYER ===================== -->
+<div id="player" role="dialog" aria-modal="true" aria-label="Meditation player">
+  <div class="player-head">
+    <button class="icon-btn" id="closePlayer" aria-label="Close">&#8592;</button>
+    <span class="player-tag" id="playerTag"></span>
+    <button class="icon-btn fav-btn" id="playerFav" aria-label="Favorite this meditation" aria-pressed="false">&#9733;</button>
+  </div>
+
+  <div class="player-body">
+    <h2 class="player-title serif" id="playerTitle"></h2>
+
+    <div class="mode-toggle" role="tablist" aria-label="Playback mode">
+      <button id="modeVoice" aria-pressed="true">Voice guided</button>
+      <button id="modeSilent" aria-pressed="false">Silent, read</button>
+    </div>
+
+    <div class="breath-ring" id="breathRing"><div class="core"></div></div>
+
+    <div class="caption" id="caption">Tap play when you're ready.</div>
+
+    <div class="progress-line"><div class="fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">Step 0 of 0</div>
+
+    <div class="voice-row" id="voiceRow">
+      <label for="voiceSelect">Voice</label>
+      <select id="voiceSelect"></select>
+      <label for="rateSelect">Pace</label>
+      <select id="rateSelect">
+        <option value="0.82">Slow</option>
+        <option value="0.92" selected>Measured</option>
+        <option value="1.0">Natural</option>
+      </select>
+    </div>
+
+    <div class="finished-note sr-only" id="finishedNote" aria-live="polite"></div>
+  </div>
+
+  <div class="player-controls">
+    <button class="ctrl-btn ghost" id="restartBtn" aria-label="Restart">&#8634;</button>
+    <button class="ctrl-btn play" id="playBtn" aria-label="Play">&#9658;</button>
+    <button class="ctrl-btn ghost" id="skipBtn" aria-label="Skip to next line">&#8594;</button>
+  </div>
+
+  <footer class="hubfoot"><span></span></footer>
+</div>
+
+<script>
+/* =========================================================
+   DATA — 30 meditations across three threads
+   Each segment: { t: line of text, p: pause in seconds after it }
+   ========================================================= */
+const MEDITATIONS = [
+/* ---------------- MINDFULNESS ---------------- */
+{id:'mind-morning',cat:'mind',title:'Morning Calm',mins:5,time:'morning',
+ desc:'A short, steady start to the day before the day starts pulling at you.',
+ script:[
+  {t:"Find a comfortable seat. Let your hands rest, palms down, on your legs.",p:4},
+  {t:"Close your eyes, or let your gaze drop softly to the floor.",p:4},
+  {t:"Take one breath in through your nose, and let it out slowly through your mouth.",p:6},
+  {t:"Nothing has happened yet today that you can't handle. This moment, right now, is quiet.",p:6},
+  {t:"Breathe in for four counts. One, two, three, four.",p:2},
+  {t:"Hold gently. And breathe out for four counts.",p:6},
+  {t:"Notice the surface under you, holding your weight without effort.",p:5},
+  {t:"Whatever today holds, you get to meet it one piece at a time.",p:5},
+  {t:"When you're ready, let your eyes open. Carry this pace with you.",p:3}
+]},
+{id:'mind-breath',cat:'mind',title:'Breath Awareness',mins:7,time:'anytime',
+ desc:'The simplest practice there is: just watching the breath move.',
+ script:[
+  {t:"Settle into your seat. Let your spine be tall but not stiff.",p:4},
+  {t:"Bring your attention to your nose, and feel the air moving in and out.",p:6},
+  {t:"You don't need to change the breath. Just notice it.",p:8},
+  {t:"Cool air on the way in. Slightly warmer air on the way out.",p:8},
+  {t:"If your mind wanders off to a to-do list or a worry, that's normal. Just notice it happened, and come back to the breath.",p:8},
+  {t:"There's no version of this where you fail. Every time you notice you drifted, that noticing is the practice.",p:8},
+  {t:"Let the next ten breaths just happen, one after another, without counting them.",p:20},
+  {t:"Notice how your body feels now compared to when you started.",p:6},
+  {t:"Take one more full breath, and slowly bring your attention back to the room.",p:5}
+]},
+{id:'mind-bodyscan',cat:'mind',title:'Body Scan',mins:12,time:'anytime',
+ desc:'A slow pass through the body to notice, and release, what you\'re holding onto.',
+ script:[
+  {t:"Lie down or sit back, and let your body be fully supported.",p:5},
+  {t:"Bring your attention to your feet. Notice any sensation there — warmth, pressure, nothing in particular. Just notice.",p:8},
+  {t:"Let that attention travel up into your calves and knees. Any tightness, let it soften.",p:8},
+  {t:"Move into your thighs and hips. This is where a lot of us carry the day. See if you can let go of ten percent of the tension here.",p:10},
+  {t:"Bring awareness to your stomach and lower back. Let your breath move through this space without you forcing it.",p:8},
+  {t:"Notice your chest rising and falling. Your heart, doing its quiet work without needing your permission.",p:8},
+  {t:"Let your attention move into your shoulders. Most of us carry our stress right here. Let them drop, even slightly, away from your ears.",p:10},
+  {t:"Down through your arms, into your hands. Let your fingers uncurl.",p:6},
+  {t:"Notice your neck, your jaw. Let your tongue rest away from the roof of your mouth. Let your jaw unclench.",p:8},
+  {t:"Finally, your forehead and scalp. Smooth it out, like ironing a wrinkle from fabric.",p:6},
+  {t:"Take a moment to feel your whole body at once, resting.",p:10},
+  {t:"When you're ready, wiggle your fingers and toes, and slowly return to the room.",p:5}
+]},
+{id:'mind-tension',cat:'mind',title:'Letting Go of Tension',mins:8,time:'anytime',
+ desc:'Active release for a body that has been braced for too long.',
+ script:[
+  {t:"Sit or lie somewhere you won't be disturbed for a few minutes.",p:4},
+  {t:"Take a full breath in, and as you do, tense your hands into fists.",p:4},
+  {t:"Hold that tension for a moment. Feel it fully.",p:4},
+  {t:"Now exhale and let your hands go completely loose. Notice the difference.",p:6},
+  {t:"Breathe in again, and this time tense your shoulders up toward your ears.",p:4},
+  {t:"Hold. And release, letting them drop heavy.",p:6},
+  {t:"Breathe in, and tighten your stomach and legs.",p:4},
+  {t:"Hold. And let it all go on the exhale.",p:6},
+  {t:"Notice how your whole body feels heavier now, more settled into whatever is holding you.",p:8},
+  {t:"You don't have to hold everything up by yourself right now. For these next few breaths, let something else hold you.",p:8},
+  {t:"When you're ready, come back to the room slowly.",p:4}
+]},
+{id:'mind-anxious',cat:'mind',title:'Steady Breath for Anxiety',mins:8,time:'anytime',
+ desc:'For when your chest feels tight and your thoughts are moving faster than you are.',
+ script:[
+  {t:"Wherever you are, just pause. You don't have to fix anything in the next ten seconds.",p:5},
+  {t:"Put one hand on your chest and one on your stomach.",p:4},
+  {t:"Breathe in slowly through your nose for a count of four, and notice which hand moves more.",p:6},
+  {t:"Try to let the hand on your stomach rise more than the one on your chest. That's a deeper, slower breath.",p:8},
+  {t:"Breathe out through your mouth for a count of six. Longer than the inhale.",p:6},
+  {t:"Again. In for four. Out for six.",p:10},
+  {t:"Whatever your mind is telling you is an emergency right now — most of what feels urgent right now will look different in an hour.",p:8},
+  {t:"You are safe in this exact moment. Not the moment your mind is worried about — this one.",p:8},
+  {t:"Keep breathing in for four, out for six, at your own pace for a little longer.",p:15},
+  {t:"When you feel steadier, let your breath return to normal and open your eyes.",p:5}
+]},
+{id:'mind-ocean',cat:'mind',title:'Ocean Waves',mins:10,time:'anytime',
+ desc:'A visualization for slowing down, using the rhythm of the tide.',
+ script:[
+  {t:"Close your eyes and picture a wide, quiet shoreline.",p:6},
+  {t:"The sand is cool under you. The air smells like salt.",p:6},
+  {t:"Watch a wave roll in slowly, gather, and then pull back out to sea.",p:8},
+  {t:"Match your breath to that wave. Breathe in as it rises.",p:6},
+  {t:"Breathe out slowly as it pulls back, further than it came.",p:8},
+  {t:"Every wave that comes in also leaves. Whatever thought just came into your mind can do the same — let it wash back out.",p:10},
+  {t:"Notice the horizon, flat and endless, where the sky meets the water.",p:8},
+  {t:"There is nowhere else you need to be right now than on this shore.",p:8},
+  {t:"Let five more waves come and go, at their own pace.",p:20},
+  {t:"When you're ready, let the image fade, and bring your attention back to this room.",p:5}
+]},
+{id:'mind-forest',cat:'mind',title:'Forest Path',mins:10,time:'anytime',
+ desc:'A slow walking visualization through quiet woods.',
+ script:[
+  {t:"Picture yourself standing at the edge of a forest trail, early in the morning.",p:6},
+  {t:"The light is soft, filtering down through the leaves above you.",p:6},
+  {t:"Begin walking slowly. Feel the ground, soft with old leaves, under your feet.",p:8},
+  {t:"Notice the sound of birds somewhere off in the trees, unhurried.",p:8},
+  {t:"The air is cool and smells like earth and pine.",p:6},
+  {t:"Up ahead, a small clearing opens where the sun reaches the ground. Walk toward it.",p:8},
+  {t:"Stand in that patch of light. Let it warm your face for a moment.",p:8},
+  {t:"There is nothing to solve here. Just the path, the light, and your breath.",p:8},
+  {t:"When you're ready, turn back the way you came, carrying this quiet with you.",p:6},
+  {t:"Slowly bring your attention back to the room around you.",p:4}
+]},
+{id:'mind-kindness',cat:'mind',title:'Loving-Kindness',mins:9,time:'anytime',
+ desc:'A traditional practice of extending goodwill — starting with yourself.',
+ script:[
+  {t:"Sit comfortably, and bring to mind your own face, as if you were looking in a mirror.",p:6},
+  {t:"Silently offer yourself these words: may I be safe.",p:5},
+  {t:"May I be healthy.",p:5},
+  {t:"May I be at ease.",p:5},
+  {t:"Now bring to mind someone you care about easily — a friend, a family member.",p:6},
+  {t:"Offer them the same: may you be safe. May you be healthy. May you be at ease.",p:8},
+  {t:"Now think of someone neutral — someone you see but don't know well.",p:6},
+  {t:"May you be safe. May you be healthy. May you be at ease.",p:8},
+  {t:"If you're able, bring to mind someone you have some tension with. You don't have to feel warmth yet — just offer the words.",p:8},
+  {t:"May you be safe. May you be at ease.",p:6},
+  {t:"Finally, widen it out to everyone, everywhere: may all beings be safe and at ease.",p:8},
+  {t:"Let that wish settle, and gently open your eyes.",p:4}
+]},
+{id:'mind-sleep',cat:'mind',title:'Sleep Wind-Down',mins:12,time:'night',
+ desc:'A slow-paced meditation to ease the body toward sleep.',
+ script:[
+  {t:"Lie down and get as comfortable as you can. Let this be the last thing you do tonight.",p:6},
+  {t:"Let your eyes close, and take a slow breath in.",p:6},
+  {t:"With each exhale, imagine the day's weight leaving your body a little at a time.",p:8},
+  {t:"Let your feet go completely heavy, sinking into the bed.",p:6},
+  {t:"Let that heaviness move up through your legs, your hips.",p:8},
+  {t:"Your stomach and chest rise and fall on their own now. You don't have to manage the breath.",p:8},
+  {t:"Let your shoulders sink, your arms go loose at your sides.",p:6},
+  {t:"Let your jaw drop slightly open, your face soften.",p:6},
+  {t:"There is nothing left to do tonight. Nothing to fix, nowhere to be.",p:10},
+  {t:"If a thought comes up, picture setting it down gently on a shelf. It will still be there tomorrow if it matters.",p:10},
+  {t:"Let your breathing slow further, each breath a little longer than the last.",p:15},
+  {t:"You can let go now.",p:10}
+]},
+{id:'mind-gratitude',cat:'mind',title:'Gratitude Pause',mins:5,time:'anytime',
+ desc:'A short reset — naming three things, without rushing past them.',
+ script:[
+  {t:"Take a slow breath and let your shoulders drop.",p:5},
+  {t:"Bring to mind one thing from today, even something small, that you're glad happened.",p:8},
+  {t:"Sit with it for a moment. Let yourself actually feel it, not just note it.",p:8},
+  {t:"Now think of one person who has made your life a little easier, even in a small way.",p:8},
+  {t:"If you can, silently thank them, even if they'll never hear it.",p:8},
+  {t:"Finally, name one thing about your own body or mind that's working for you right now — maybe just that you're breathing steadily.",p:8},
+  {t:"Three things. That's enough for today.",p:5},
+  {t:"Open your eyes when you're ready.",p:3}
+]},
+
+/* ---------------- RECOVERY ---------------- */
+{id:'rec-oneday',cat:'recovery',title:'One Day at a Time',mins:6,time:'anytime',
+ desc:'A grounding practice for when the whole future feels too heavy to hold.',
+ script:[
+  {t:"Sit for a moment and just notice your breathing, without changing it yet.",p:5},
+  {t:"You don't have to figure out the rest of your life in this sitting.",p:6},
+  {t:"You only have to get through today. Just today.",p:8},
+  {t:"Breathe in, and say to yourself: just for today.",p:6},
+  {t:"Breathe out, and let the rest of the week, the rest of the year, fall away from your shoulders.",p:8},
+  {t:"Think of one small, doable thing that would make today a little more solid — a phone call, a meeting, a meal.",p:8},
+  {t:"That's the whole job today. Not forever. Today.",p:8},
+  {t:"You've made it through every hard day so far. That's not luck. That's you.",p:8},
+  {t:"When you're ready, open your eyes and take the next right step.",p:5}
+]},
+{id:'rec-urge',cat:'recovery',title:'Riding Out a Craving',mins:8,time:'anytime',
+ desc:'A practice for urge surfing — letting a craving rise and pass without acting on it.',
+ script:[
+  {t:"Find somewhere to sit. This feeling is uncomfortable, but it is not dangerous by itself.",p:6},
+  {t:"Notice where the craving lives in your body right now — your chest, your stomach, your hands.",p:8},
+  {t:"Don't fight it and don't feed it. Just notice its shape.",p:8},
+  {t:"A craving is like a wave. It builds, it peaks, and — even if it doesn't feel like it right now — it always comes back down.",p:8},
+  {t:"Breathe into that spot in your body where you feel it. Not to push it away. Just to be there with it.",p:10},
+  {t:"You are not your craving. You are the one noticing it.",p:8},
+  {t:"If it's still strong, that's okay. It will still peak and fall, whether you act on it or not.",p:8},
+  {t:"Think of one reason, just one, that you're glad you're still fighting for this.",p:8},
+  {t:"Keep breathing through it. You've outlasted every craving you've ever had. You can outlast this one too.",p:10},
+  {t:"When you're ready, open your eyes, and get up and do the next small thing.",p:5}
+]},
+{id:'rec-morning',cat:'recovery',title:'Morning Sobriety Intention',mins:5,time:'morning',
+ desc:'A short practice to start the day anchored, before anything else pulls at you.',
+ script:[
+  {t:"Before you pick up your phone, before the day starts, just sit for a moment.",p:5},
+  {t:"Take a breath, and say to yourself: today, I choose recovery.",p:6},
+  {t:"Not because it's easy. Because it's worth it.",p:6},
+  {t:"Think of one person or one reason that matters to you in this.",p:8},
+  {t:"Picture yourself tonight, looking back at today, glad you stayed the course.",p:8},
+  {t:"You don't need a perfect day. You need an honest one.",p:6},
+  {t:"Take one more breath, and let that be enough to start.",p:5},
+  {t:"Open your eyes, and go begin the day.",p:3}
+]},
+{id:'rec-halt',cat:'recovery',title:'HALT Check-In',mins:6,time:'anytime',
+ desc:'A body check to catch what\'s actually going on underneath the urge.',
+ script:[
+  {t:"Pause wherever you are. Something in you is asking for attention, so let's find out what.",p:6},
+  {t:"First: are you hungry? Not just for food — check honestly.",p:8},
+  {t:"Second: are you angry? Notice if there's tension in your jaw or chest that's been sitting there unspoken.",p:8},
+  {t:"Third: are you lonely? Has it been a while since you talked to someone who actually knows you?",p:8},
+  {t:"Fourth: are you tired? Sometimes the mind asks for relief when the body just needs rest.",p:8},
+  {t:"You don't have to solve all four right now. Just notice which one is loudest.",p:8},
+  {t:"Whatever it is, it has an actual answer — food, rest, a phone call, a few honest words. Not the thing you were about to reach for instead.",p:8},
+  {t:"Take one more breath, and go meet that real need.",p:5}
+]},
+{id:'rec-evening',cat:'recovery',title:'Evening Recovery Inventory',mins:8,time:'night',
+ desc:'A short nightly check-in, honest without being harsh.',
+ script:[
+  {t:"Settle in for the end of the day. This is between you and yourself.",p:5},
+  {t:"Think back over today. Was there a moment you're proud of? Even something small.",p:8},
+  {t:"Sit with that for a moment. Let yourself have the credit for it.",p:6},
+  {t:"Now, was there a moment you'd want to handle differently? Not to punish yourself — just to notice.",p:8},
+  {t:"If there's something to make right with someone, or with yourself, name it quietly.",p:8},
+  {t:"You don't have to fix it tonight. Just seeing it clearly is the work of tonight.",p:8},
+  {t:"Think of one thing you're grateful stayed steady today — your recovery, a person, your own effort.",p:8},
+  {t:"Let today be complete. Tomorrow gets its own inventory.",p:6},
+  {t:"Rest now.",p:4}
+]},
+{id:'rec-shame',cat:'recovery',title:'Releasing Shame',mins:9,time:'anytime',
+ desc:'For the weight that says you are your worst moment, not just someone who had one.',
+ script:[
+  {t:"Sit somewhere quiet. This one takes a little courage, so go slow.",p:6},
+  {t:"Bring to mind, gently, something from your past that shame likes to bring up.",p:8},
+  {t:"Notice the difference between guilt and shame. Guilt says, I did something wrong. Shame says, I am something wrong. Only one of those is true.",p:10},
+  {t:"What you did came out of pain, or sickness, or a version of you who didn't have better tools yet.",p:8},
+  {t:"That person was still worth something. You are still worth something.",p:8},
+  {t:"Say quietly to yourself: I am not the worst thing I've done.",p:8},
+  {t:"You can hold responsibility for your past and still refuse to let it define your whole worth.",p:8},
+  {t:"Breathe out, and let some of that old weight leave with the exhale.",p:8},
+  {t:"You are allowed to become someone new. That's not letting yourself off easy — that's the actual work.",p:8},
+  {t:"Open your eyes when you're ready, a little lighter.",p:5}
+]},
+{id:'rec-anger',cat:'recovery',title:'Sitting with Anger',mins:8,time:'anytime',
+ desc:'A way to feel anger fully without letting it drive the next decision.',
+ script:[
+  {t:"Find a seat, and let yourself actually feel whatever is stirred up right now.",p:6},
+  {t:"Notice where the anger sits in your body — a tight jaw, a hot chest, clenched hands.",p:8},
+  {t:"You're allowed to be angry. That's information, not a character flaw.",p:8},
+  {t:"Breathe into that tight place, not to make the anger disappear, just to keep it from running the show.",p:10},
+  {t:"Ask yourself: underneath this anger, is there hurt? Fear? Feeling disrespected?",p:8},
+  {t:"Anger is often a second emotion, covering for a first one that feels more vulnerable.",p:8},
+  {t:"You don't have to act on this feeling in the next five minutes. Let it move through you like weather.",p:10},
+  {t:"Unclench your jaw. Unclench your hands, one finger at a time.",p:8},
+  {t:"When you do respond to whatever caused this, you get to choose to do it from a steadier place than this one.",p:8},
+  {t:"Take one more breath, and open your eyes.",p:4}
+]},
+{id:'rec-lonely',cat:'recovery',title:'Comfort in Loneliness',mins:7,time:'night',
+ desc:'For the nights that feel like no one else is awake with you.',
+ script:[
+  {t:"Wherever you are tonight, just notice that you're here, breathing, still trying.",p:6},
+  {t:"Loneliness lies. It tells you that you're the only one who's ever felt this exact way. You're not.",p:8},
+  {t:"Somewhere close by, someone else is sitting with this same ache tonight.",p:8},
+  {t:"You don't have to solve the loneliness right now — just don't let it convince you that you're the problem.",p:8},
+  {t:"Think of one person, even one, who would be glad to hear from you. You don't have to reach out this second. Just hold the thought.",p:10},
+  {t:"Being alone tonight is not the same as being unworthy of company.",p:8},
+  {t:"Breathe slowly, and let this feeling be temporary weather, not a permanent forecast.",p:8},
+  {t:"Tomorrow, take one small step toward someone. Tonight, just get through it.",p:6},
+  {t:"You're doing better than the loneliness wants you to believe.",p:5}
+]},
+{id:'rec-trust',cat:'recovery',title:'Rebuilding Trust',mins:8,time:'anytime',
+ desc:'For the slow work of becoming believable again — to others, and to yourself.',
+ script:[
+  {t:"Sit for a moment with the honest fact that trust takes time to rebuild, and that's okay.",p:6},
+  {t:"You can't undo what broke it. You can only be consistent, one day, one kept word, at a time.",p:8},
+  {t:"Think of one promise you've kept to yourself lately, even a small one.",p:8},
+  {t:"That counts. Trust is built in exactly that size of moment.",p:8},
+  {t:"If someone in your life is still cautious with you, that's not proof you've failed — it's proof they're paying attention to your actions, not just your words.",p:10},
+  {t:"Let that be motivation instead of despair.",p:6},
+  {t:"You don't have to earn back everything today. Just be someone today's version of you can be proud of.",p:8},
+  {t:"Breathe out, and let go of needing this to move faster than it will.",p:8},
+  {t:"Open your eyes, and go be consistent for one more day.",p:4}
+]},
+{id:'rec-serenity',cat:'recovery',title:'Serenity Prayer Meditation',mins:6,time:'anytime',
+ desc:'A slow sit with the idea at the center of the Serenity Prayer.',
+ script:[
+  {t:"Settle in, and bring to mind something that's been weighing on you.",p:6},
+  {t:"Ask yourself honestly: is this something I can actually change?",p:8},
+  {t:"If it is, let that bring you a little relief — you have real work to do, and that's better than helplessness.",p:8},
+  {t:"If it isn't something you can change, notice how much energy you've spent trying anyway.",p:8},
+  {t:"Breathe out, and imagine setting that particular thing down, just for these next few minutes.",p:8},
+  {t:"Ask for the wisdom to know which one this is. Sometimes that clarity takes more than one sitting to arrive.",p:8},
+  {t:"Courage for what's yours to change. Peace for what isn't. Wisdom to tell the difference.",p:8},
+  {t:"Carry that with you as you open your eyes.",p:4}
+]},
+
+/* ---------------- FAITH ---------------- */
+{id:'faith-psalm23',cat:'faith',title:'Psalm 23 Walkthrough',mins:8,time:'anytime',
+ desc:'A slow meditation through the images of the shepherd psalm.',
+ script:[
+  {t:"Settle into stillness, and picture yourself as a sheep under the care of a good shepherd.",p:6},
+  {t:"You are not in charge of finding your own way right now. Something greater is leading.",p:8},
+  {t:"Picture green pasture, quiet water. Nowhere to rush to. Nothing to prove.",p:8},
+  {t:"Let your soul be restored, even just for these few minutes.",p:8},
+  {t:"Picture a path, and know that even the right paths sometimes wind through dark valleys.",p:8},
+  {t:"You do not have to fear that valley, because you are not walking it alone.",p:8},
+  {t:"Picture a table, prepared for you, even with difficulty close by. There is still room for you to be fed and cared for.",p:10},
+  {t:"Your cup is full, more than enough for today.",p:6},
+  {t:"Believe, even quietly, that goodness and mercy are following you, not just waiting somewhere ahead.",p:8},
+  {t:"Rest in that thought before you open your eyes.",p:5}
+]},
+{id:'faith-cares',cat:'faith',title:'Casting Your Cares',mins:6,time:'anytime',
+ desc:'A short practice based on 1 Peter 5:7 — laying down what you\'re carrying.',
+ script:[
+  {t:"Sit and notice everything you're holding right now — worries, plans, fears.",p:6},
+  {t:"Picture each one as an actual weight in your hands.",p:6},
+  {t:"You are invited to hand these over, because you are cared for, not because you've earned it.",p:8},
+  {t:"Name one care silently, and imagine setting it down.",p:8},
+  {t:"Name a second, and set it down as well.",p:8},
+  {t:"You don't have to pick them back up the moment this is over. Let them rest where you set them.",p:8},
+  {t:"Breathe in the relief of empty hands.",p:8},
+  {t:"You were never meant to carry all of it alone.",p:6},
+  {t:"Open your eyes when you're ready, hands a little lighter.",p:4}
+]},
+{id:'faith-morning',cat:'faith',title:'Morning Quiet Time',mins:5,time:'morning',
+ desc:'A brief way to open the day in God\'s presence before anything else.',
+ script:[
+  {t:"Before the day gets loud, sit quietly for a moment.",p:5},
+  {t:"Thank God simply for this morning, for breath, for another chance.",p:8},
+  {t:"Ask for one thing you'll actually need today — patience, strength, clarity.",p:8},
+  {t:"Sit in silence for a moment, and just let yourself be still in that presence, without needing words.",p:12},
+  {t:"Whatever today holds, you don't walk into it unaccompanied.",p:8},
+  {t:"Take one more breath, and carry this quiet with you into the day.",p:5}
+]},
+{id:'faith-peace',cat:'faith',title:'Peace That Passes Understanding',mins:7,time:'anytime',
+ desc:'A meditation drawn from Philippians 4, on trading anxiety for prayer.',
+ script:[
+  {t:"Bring to mind whatever has been making you anxious lately.",p:6},
+  {t:"Instead of pushing it away, bring it honestly into this moment, as a request rather than a burden.",p:8},
+  {t:"Add thankfulness to it — even in the middle of the worry, name one thing you're grateful for.",p:8},
+  {t:"Ask for the peace that doesn't depend on the situation actually being resolved yet.",p:8},
+  {t:"That peace is described as something that guards your heart and mind — picture it standing watch, not solving everything, just guarding.",p:10},
+  {t:"Breathe slowly, and let that guard take over for a few minutes.",p:10},
+  {t:"You don't need the full answer today. You need the peace to get through today.",p:8},
+  {t:"Open your eyes, carrying that peace forward.",p:4}
+]},
+{id:'faith-surrender',cat:'faith',title:'Evening Surrender',mins:8,time:'night',
+ desc:'A way to end the day by handing over what you couldn\'t finish or fix.',
+ script:[
+  {t:"Lie back or sit comfortably, and let today be done.",p:6},
+  {t:"Think of anything left unresolved from today — a conversation, a task, a fear.",p:8},
+  {t:"You don't have to solve it in this bed, tonight. Hand it over.",p:8},
+  {t:"Picture placing it into open hands stronger and steadier than yours.",p:8},
+  {t:"Thank God for what went right today, even something small.",p:8},
+  {t:"Ask for rest, real rest, not just the absence of activity.",p:8},
+  {t:"Let your body sink into the bed, trusting that tomorrow will be handled too.",p:10},
+  {t:"You are allowed to stop carrying it for tonight.",p:6},
+  {t:"Rest now.",p:6}
+]},
+{id:'faith-shepherd',cat:'faith',title:'Walking with the Good Shepherd',mins:9,time:'anytime',
+ desc:'A longer visualization of being led, provided for, and known by name.',
+ script:[
+  {t:"Picture an open field at dusk, and a shepherd walking a familiar path ahead of you.",p:6},
+  {t:"You are not driven from behind. You are led, and you're free to follow at your own pace.",p:8},
+  {t:"This shepherd knows your name, not just your face in a crowd.",p:8},
+  {t:"When the path narrows or the ground gets rocky, notice that the shepherd doesn't disappear — he slows down with you.",p:10},
+  {t:"You are not being herded toward punishment. You're being led toward pasture, toward rest.",p:8},
+  {t:"If you've wandered before, notice that a good shepherd goes looking, rather than writing off the one who strayed.",p:10},
+  {t:"That's not naivety on the shepherd's part. That's the whole character of the one leading you.",p:8},
+  {t:"Let yourself be found again, right here, in this quiet field.",p:8},
+  {t:"Walk on a little further in your mind, at peace, before you open your eyes.",p:6}
+]},
+{id:'faith-love',cat:'faith',title:'God\'s Steadfast Love',mins:7,time:'anytime',
+ desc:'A meditation on being loved consistently, not based on your performance.',
+ script:[
+  {t:"Sit quietly, and set aside for a moment any sense of how well you think you've been doing lately.",p:8},
+  {t:"The love being described here is called steadfast — meaning it doesn't rise and fall with your performance.",p:8},
+  {t:"It was there on your best day this year. It was there on your worst.",p:8},
+  {t:"You don't have to perform your way into being worth loving. That work is already finished.",p:8},
+  {t:"Let that truth sit somewhere lower than your head — try to let it reach your chest.",p:10},
+  {t:"Breathe in that steadiness. Breathe out whatever scorekeeping you've been doing against yourself.",p:8},
+  {t:"You are loved this morning or this evening, exactly as you are, mid-story.",p:8},
+  {t:"Carry that with you as you open your eyes.",p:4}
+]},
+{id:'faith-waiting',cat:'faith',title:'Waiting on the Lord',mins:8,time:'anytime',
+ desc:'For the seasons when nothing seems to be moving, and patience feels impossible.',
+ script:[
+  {t:"Sit with the honest frustration of waiting for something that hasn't come yet.",p:6},
+  {t:"Waiting isn't the same as being forgotten. Notice the difference between those two feelings.",p:8},
+  {t:"Those who wait are described as renewing their strength, like an eagle catching an updraft instead of flapping the whole way up.",p:10},
+  {t:"What would it look like to stop flapping for a few minutes, and just let yourself be carried?",p:8},
+  {t:"You don't have to make something happen today by sheer force.",p:8},
+  {t:"Breathe slowly, and trust that this season, even this slow one, is not wasted.",p:10},
+  {t:"Ask for strength to wait well, not just to wait bitterly.",p:8},
+  {t:"Open your eyes, a little steadier for the waiting ahead.",p:4}
+]},
+{id:'faith-thanks',cat:'faith',title:'A Prayer of Thanksgiving',mins:6,time:'anytime',
+ desc:'A short practice of gratitude directed upward, not just inward.',
+ script:[
+  {t:"Sit quietly, and think of three specific things from the last day or two.",p:8},
+  {t:"Name the first one, and say a quiet thank you for it, not just to yourself, but upward.",p:8},
+  {t:"Name the second, even something as ordinary as a meal or a full night's sleep.",p:8},
+  {t:"Name the third — maybe a person, maybe a hard day that turned out okay.",p:8},
+  {t:"Thanksgiving has a way of loosening the grip of worry, even for a few minutes.",p:8},
+  {t:"Let that looseness stay with you as you finish this sitting.",p:6},
+  {t:"Open your eyes when you're ready.",p:3}
+]},
+{id:'faith-night',cat:'faith',title:'Night Watch Prayer',mins:10,time:'night',
+ desc:'For the hours when sleep won\'t come and the mind won\'t quiet on its own.',
+ script:[
+  {t:"If you're awake in the middle of the night, know that this hour isn't wasted.",p:6},
+  {t:"Some of the most honest prayers happen in exactly this kind of dark, quiet hour.",p:8},
+  {t:"Bring whatever is keeping you awake honestly into this moment. No need to soften it.",p:8},
+  {t:"Picture someone keeping watch alongside you, not asleep, not distracted, fully present in this hour with you.",p:10},
+  {t:"You don't have to solve tonight's worry before you're allowed to rest.",p:8},
+  {t:"Breathe slowly, and hand tonight's specific fear over, one more time.",p:8},
+  {t:"Morning does come, even after long nights. It always has, so far.",p:8},
+  {t:"Let your body soften into the bed, watched over even while you sleep.",p:10},
+  {t:"Rest now, in this hour, exactly as it is.",p:8}
+]},
+
+/* ---------------- MORE MORNING ---------------- */
+{id:'mind-waking',cat:'mind',title:'Waking Up Slowly',mins:6,time:'morning',
+ desc:'A gentle way to arrive in your body before the day picks up speed.',
+ script:[
+  {t:"Before you reach for your phone, just notice that you're awake.",p:5},
+  {t:"Feel the weight of the blanket, the temperature of the room, the light coming in.",p:8},
+  {t:"Take a slow breath in, and notice the very first thought your mind offers you today.",p:8},
+  {t:"You don't have to act on that thought yet. You can just notice it and let it pass.",p:8},
+  {t:"Stretch your fingers and toes, one small movement at a time, waking up your body on purpose.",p:8},
+  {t:"Today hasn't asked anything of you yet. This minute is still just yours.",p:8},
+  {t:"When you're ready, take one more breath, and let the day begin at your pace, not its.",p:6}
+]},
+{id:'rec-firsthour',cat:'recovery',title:'The First Hour',mins:6,time:'morning',
+ desc:'Setting the tone for the day before anything has a chance to knock you off course.',
+ script:[
+  {t:"You're awake, and you're still in this. That's not nothing — that's the whole foundation.",p:6},
+  {t:"Think about the first hour ahead of you. Not the whole day. Just the first hour.",p:8},
+  {t:"What's one thing in that hour that supports your recovery — coffee with a clear head, a meeting, a text to someone safe?",p:8},
+  {t:"Decide on it now, before the day gets loud enough to talk you out of it.",p:8},
+  {t:"You are allowed to protect your mornings fiercely. They set the tone for everything after.",p:8},
+  {t:"Take a breath, and picture yourself tonight, glad about how you started today.",p:8},
+  {t:"Get up, and go have that first hour.",p:4}
+]},
+{id:'faith-newmercies',cat:'faith',title:'New Every Morning',mins:6,time:'morning',
+ desc:'A meditation on the idea that mercy resets each day, no matter how yesterday went.',
+ script:[
+  {t:"However yesterday ended, notice that it did end. Today is a genuinely new page.",p:6},
+  {t:"Mercy is described as new every morning — not recycled from yesterday's leftovers, but fresh.",p:8},
+  {t:"That means today doesn't have to be a continuation of your worst recent day.",p:8},
+  {t:"Take a breath, and let yesterday's failures, if there were any, stay in yesterday.",p:8},
+  {t:"You are not waking up further behind than you were. You're waking up with a clean page in front of you.",p:8},
+  {t:"Ask for whatever you'll need today — patience, courage, a steady mind.",p:8},
+  {t:"Step into this new morning like it's actually new, because it is.",p:5}
+]},
+
+/* ---------------- MORE NIGHT ---------------- */
+{id:'mind-unwind',cat:'mind',title:'Unwinding the Day',mins:8,time:'night',
+ desc:'A transition practice for closing the day\'s laptop, literally and mentally.',
+ script:[
+  {t:"Sit somewhere away from screens for a few minutes, and let your eyes rest.",p:5},
+  {t:"Take a slow breath, and mentally set down whatever job or role you were playing today.",p:8},
+  {t:"You don't have to carry your work-self into tonight. You're allowed to change out of it.",p:8},
+  {t:"Notice any leftover tension in your shoulders or jaw from hours of holding it together.",p:8},
+  {t:"Let your shoulders drop. Let your face soften.",p:6},
+  {t:"Picture closing a door on today, gently, not slamming it, just closing it.",p:8},
+  {t:"Whatever's unfinished will still be there tomorrow. Tonight doesn't need to solve it.",p:8},
+  {t:"Take one more breath, and let yourself actually arrive in the evening.",p:6}
+]},
+{id:'rec-nightcravings',cat:'recovery',title:'When Night Cravings Hit',mins:8,time:'night',
+ desc:'For the specific, familiar pull that shows up after dark.',
+ script:[
+  {t:"If it's late and something in you is restless, you're not alone in that, and it's not a sign you're failing.",p:8},
+  {t:"Nighttime cravings often come from a tired mind looking for relief, not a moral weakness.",p:8},
+  {t:"Notice where it sits in your body right now.",p:6},
+  {t:"Breathe into that spot, slowly, for a few breaths, without judging yourself for feeling it.",p:10},
+  {t:"Remind yourself: this feeling has a shelf life. It will not stay this intense all night.",p:8},
+  {t:"Think of one small, doable thing that would help right now — water, a short walk, a text to someone safe, sleep itself.",p:8},
+  {t:"Do that one small thing instead of deciding anything bigger tonight.",p:8},
+  {t:"Tomorrow you can look back and be proud you got through tonight exactly like this.",p:8}
+]},
+{id:'faith-wings',cat:'faith',title:'Under His Wings',mins:7,time:'night',
+ desc:'A meditation on shelter and protection before sleep, drawn from Psalm 91.',
+ script:[
+  {t:"As you settle in for the night, picture a place of shelter — somewhere covered, guarded, safe.",p:6},
+  {t:"You are invited to rest under that kind of covering tonight, not because you've earned safety, but because it's offered.",p:8},
+  {t:"Whatever fear tends to visit you at night, name it quietly, and picture it staying outside that shelter.",p:8},
+  {t:"You do not have to keep watch all night by yourself.",p:8},
+  {t:"Let your body grow heavy, trusting that you are covered while you sleep.",p:8},
+  {t:"There is nothing you need to solve, guard, or fix between now and morning.",p:8},
+  {t:"Rest now, under cover, until morning comes.",p:6}
+]}
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const CATS = [
+  {id:'all', label:'All'},
+  {id:'morning', label:'☀ Morning'},
+  {id:'night', label:'☾ Night'},
+  {id:'mind', label:'Mindfulness'},
+  {id:'recovery', label:'Recovery'},
+  {id:'faith', label:'Faith'},
+  {id:'fav', label:'★ Favorites'}
+];
+const TIME_FILTERS = new Set(['morning','night']);
+
+const store = {
+  get(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v===null?d:v; }catch(e){return d;} },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+let favorites = new Set(store.get('sw_favorites', []));
+let activeFilter = 'all';
+let current = null;       // current meditation object
+let stepIndex = 0;
+let mode = 'voice';       // 'voice' | 'silent'
+let playing = false;
+let silentTimer = null;
+let audioCtx = null;
+
+/* =========================================================
+   STREAK / STATS
+   ========================================================= */
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function loadStats(){
+  return store.get('sw_stats', {lastDate:null, streak:0, total:0});
+}
+function saveStats(s){ store.set('sw_stats', s); }
+
+function renderStats(){
+  const s = loadStats();
+  document.getElementById('streakNum').textContent = s.streak;
+  document.getElementById('totalNum').textContent = s.total;
+}
+
+function logCompletion(){
+  const s = loadStats();
+  const today = todayStr();
+  if (s.lastDate === today){
+    // already logged today, just bump total
+  } else {
+    const y = new Date(); y.setDate(y.getDate()-1);
+    const yStr = y.toISOString().slice(0,10);
+    s.streak = (s.lastDate === yStr) ? s.streak + 1 : 1;
+    s.lastDate = today;
+  }
+  s.total += 1;
+  saveStats(s);
+  renderStats();
+}
+
+/* =========================================================
+   BELL (Web Audio, no external assets)
+   ========================================================= */
+function ensureAudio(){
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) audioCtx = new Ctx();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function chime(times=1){
+  ensureAudio();
+  if (!audioCtx) return;
+  for (let i=0;i<times;i++){
+    const start = audioCtx.currentTime + i*0.9;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(528, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.18, start+0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start+2.2);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(start);
+    osc.stop(start+2.3);
+  }
+}
+
+/* =========================================================
+   LIBRARY RENDERING
+   ========================================================= */
+const catLabel = {mind:'Mindfulness', recovery:'Recovery', faith:'Faith'};
+
+function renderFilters(){
+  const el = document.getElementById('filters');
+  el.innerHTML = '';
+  CATS.forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = c.label;
+    b.setAttribute('role','tab');
+    b.setAttribute('aria-pressed', String(c.id===activeFilter));
+    b.addEventListener('click', ()=>{ activeFilter = c.id; renderFilters(); renderLibrary(); });
+    el.appendChild(b);
+  });
+}
+
+function renderLibrary(){
+  const ul = document.getElementById('library');
+  ul.innerHTML = '';
+  let list = MEDITATIONS;
+  if (activeFilter === 'fav') list = list.filter(m=>favorites.has(m.id));
+  else if (TIME_FILTERS.has(activeFilter)) list = list.filter(m=>m.time===activeFilter);
+  else if (activeFilter !== 'all') list = list.filter(m=>m.cat===activeFilter);
+
+  if (list.length === 0){
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = activeFilter === 'fav' ? "No favorites yet — tap the star on any meditation." : "Nothing here yet.";
+    ul.appendChild(p);
+    return;
+  }
+
+  const timeLabel = {morning:'Morning', night:'Night', anytime:''};
+
+  list.forEach(m=>{
+    const li = document.createElement('li');
+    li.className = 'med-item';
+    const tag = timeLabel[m.time] ? `${catLabel[m.cat]} · ${timeLabel[m.time]}` : catLabel[m.cat];
+    li.innerHTML = `
+      <div class="bar ${m.cat}"></div>
+      <button class="med-btn" data-id="${m.id}">
+        <div class="row1">
+          <span class="med-title">${m.title}</span>
+          <span class="med-meta">${m.mins} min</span>
+        </div>
+        <span class="med-tag">${tag}</span>
+        <span class="med-desc">${m.desc}</span>
+      </button>
+      <button class="fav-btn" data-fav="${m.id}" aria-pressed="${favorites.has(m.id)}" aria-label="Toggle favorite">★</button>
+    `;
+    ul.appendChild(li);
+  });
+
+  ul.querySelectorAll('.med-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openPlayer(btn.dataset.id));
+  });
+  ul.querySelectorAll('.fav-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.fav;
+      if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
+      store.set('sw_favorites', Array.from(favorites));
+      renderLibrary();
+    });
+  });
+}
+
+/* =========================================================
+   VOICES
+   ========================================================= */
+let voices = [];
+function loadVoices(){
+  voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  const sel = document.getElementById('voiceSelect');
+  sel.innerHTML = '';
+  if (voices.length === 0){
+    const o = document.createElement('option');
+    o.textContent = 'Default voice';
+    sel.appendChild(o);
+    return;
+  }
+  voices.forEach((v,i)=>{
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `${v.name} (${v.lang})`;
+    sel.appendChild(o);
+  });
+  const savedIdx = store.get('sw_voice_idx', null);
+  if (savedIdx !== null && voices[savedIdx]) sel.value = savedIdx;
+}
+if ('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+/* =========================================================
+   PLAYER
+   ========================================================= */
+const playerEl = document.getElementById('player');
+const breathRing = document.getElementById('breathRing');
+const captionEl = document.getElementById('caption');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const playBtn = document.getElementById('playBtn');
+const playerFav = document.getElementById('playerFav');
+
+function openPlayer(id){
+  current = MEDITATIONS.find(m=>m.id===id);
+  if (!current) return;
+  stepIndex = -1;
+  playing = false;
+  mode = 'voice';
+  setModeUI();
+  const tLabel = {morning:'Morning', night:'Night', anytime:''};
+  const parts = [catLabel[current.cat]];
+  if (tLabel[current.time]) parts.push(tLabel[current.time]);
+  parts.push(`${current.mins} min`);
+  document.getElementById('playerTag').textContent = parts.join(' · ');
+  document.getElementById('playerTitle').textContent = current.title;
+  captionEl.textContent = "Tap play when you're ready.";
+  progressFill.style.width = '0%';
+  progressLabel.textContent = `Step 0 of ${current.script.length}`;
+  playerFav.setAttribute('aria-pressed', String(favorites.has(current.id)));
+  playBtn.innerHTML = '&#9658;';
+  breathRing.classList.remove('playing');
+  playerEl.classList.add('open');
+  loadVoices();
+}
+
+function closePlayer(){
+  stopAll();
+  playerEl.classList.remove('open');
+}
+
+function setModeUI(){
+  document.getElementById('modeVoice').setAttribute('aria-pressed', String(mode==='voice'));
+  document.getElementById('modeSilent').setAttribute('aria-pressed', String(mode==='silent'));
+  document.getElementById('voiceRow').style.display = mode==='voice' ? 'flex' : 'none';
+}
+
+function stopAll(){
+  playing = false;
+  breathRing.classList.remove('playing');
+  playBtn.innerHTML = '&#9658;';
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if (silentTimer){ clearTimeout(silentTimer); silentTimer = null; }
+}
+
+function updateProgress(){
+  const total = current.script.length;
+  const done = Math.max(0, stepIndex);
+  progressFill.style.width = `${Math.min(100,(done/total)*100)}%`;
+  progressLabel.textContent = `Step ${Math.min(done+1,total)} of ${total}`;
+}
+
+function showLine(text){
+  captionEl.classList.add('fading');
+  setTimeout(()=>{
+    captionEl.textContent = text;
+    captionEl.classList.remove('fading');
+  }, 220);
+}
+
+function finishSession(){
+  stopAll();
+  chime(2);
+  showLine("Session complete. Well done.");
+  progressFill.style.width = '100%';
+  logCompletion();
+}
+
+function nextStep(){
+  stepIndex++;
+  if (stepIndex >= current.script.length){
+    finishSession();
+    return;
+  }
+  updateProgress();
+  const line = current.script[stepIndex];
+  showLine(line.t);
+
+  if (mode === 'voice' && 'speechSynthesis' in window){
+    const utt = new SpeechSynthesisUtterance(line.t);
+    const sel = document.getElementById('voiceSelect');
+    if (voices[sel.value]) utt.voice = voices[sel.value];
+    utt.rate = parseFloat(document.getElementById('rateSelect').value);
+    utt.onend = () => {
+      if (!playing) return;
+      silentTimer = setTimeout(nextStep, line.p*1000);
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+  } else {
+    silentTimer = setTimeout(nextStep, line.p*1000);
+  }
+}
+
+function playPause(){
+  ensureAudio();
+  if (playing){
+    playing = false;
+    breathRing.classList.remove('playing');
+    playBtn.innerHTML = '&#9658;';
+    if ('speechSynthesis' in window) window.speechSynthesis.pause();
+    if (silentTimer){ clearTimeout(silentTimer); silentTimer = null; }
+    return;
+  }
+  playing = true;
+  breathRing.classList.add('playing');
+  playBtn.innerHTML = '&#10073;&#10073;';
+  if (stepIndex === -1){
+    chime(1);
+    nextStep();
+  } else if ('speechSynthesis' in window && window.speechSynthesis.paused){
+    window.speechSynthesis.resume();
+  } else if (!silentTimer && mode==='silent'){
+    nextStep();
+  }
+}
+
+function restart(){
+  stopAll();
+  stepIndex = -1;
+  progressFill.style.width = '0%';
+  captionEl.textContent = "Tap play when you're ready.";
+  progressLabel.textContent = `Step 0 of ${current.script.length}`;
+}
+
+function skipLine(){
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if (silentTimer){ clearTimeout(silentTimer); silentTimer=null; }
+  if (playing) nextStep();
+}
+
+/* =========================================================
+   WIRE UP
+   ========================================================= */
+document.getElementById('closePlayer').addEventListener('click', closePlayer);
+document.getElementById('playBtn').addEventListener('click', playPause);
+document.getElementById('restartBtn').addEventListener('click', restart);
+document.getElementById('skipBtn').addEventListener('click', skipLine);
+document.getElementById('modeVoice').addEventListener('click', ()=>{
+  if (mode==='voice') return;
+  stopAll(); mode='voice'; setModeUI(); restart();
+});
+document.getElementById('modeSilent').addEventListener('click', ()=>{
+  if (mode==='silent') return;
+  stopAll(); mode='silent'; setModeUI(); restart();
+});
+playerFav.addEventListener('click', ()=>{
+  if (!current) return;
+  if (favorites.has(current.id)) favorites.delete(current.id); else favorites.add(current.id);
+  store.set('sw_favorites', Array.from(favorites));
+  playerFav.setAttribute('aria-pressed', String(favorites.has(current.id)));
+  renderLibrary();
+});
+document.getElementById('voiceSelect').addEventListener('change', (e)=>{
+  store.set('sw_voice_idx', e.target.value);
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderFilters();
+renderLibrary();
+renderStats();
+loadVoices();
+
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
